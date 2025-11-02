@@ -1,149 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Team Code Collector</title>
+  <meta charset="UTF-8">
+  <title>Team Code Wall</title>
   <style>
-    body {
-      font-family: 'Poppins', sans-serif;
-      background: #f4f4f9;
-      margin: 0;
-      padding: 0;
-    }
-    h1 {
-      text-align: center;
-      background: #4a4aff;
-      color: white;
-      padding: 20px;
-      margin: 0;
-    }
-    form {
-      background: white;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    input, textarea {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 15px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background: #4a4aff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover { background: #3333cc; }
-    .msg {
-      text-align: center;
-      color: green;
-      font-weight: bold;
-    }
-    .codes {
-      max-width: 800px;
-      margin: 20px auto;
-    }
-    .card {
-      background: white;
-      border-radius: 10px;
-      padding: 15px;
-      margin-bottom: 15px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .card h3 { margin: 0; color: #4a4aff; }
-    .card pre {
-      background: #f2f2f2;
-      padding: 10px;
-      border-radius: 8px;
-      overflow-x: auto;
-    }
+    body { font-family: Arial; background: #f7f7f7; margin: 40px; }
+    h2 { text-align: center; }
+    form { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; max-width: 600px; margin: 20px auto; }
+    input, textarea { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+    button { background: #007BFF; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+    .card { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 600px; box-shadow: 0 0 8px #ccc; }
+    pre { background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <h1>💻 Team Code Collector</h1>
+  <h2>👩‍💻 Team Code Wall 👨‍💻</h2>
 
   <form id="codeForm">
     <input type="text" id="name" placeholder="Your Name" required>
-    <textarea id="description" placeholder="Short Description" rows="2" required></textarea>
-    <textarea id="code" placeholder="Paste your code here..." rows="6" required></textarea>
-    <input type="text" id="image" placeholder="Image Link (optional)">
-    <button type="submit">Submit</button>
+    <input type="text" id="description" placeholder="Short Description" required>
+    <textarea id="code" rows="6" placeholder="Paste your code here..." required></textarea>
+    <input type="url" id="image" placeholder="Paste dry run image link (optional)">
+    <button type="submit">Submit Code</button>
   </form>
 
-  <p class="msg" id="msg"></p>
-
-  <div class="codes" id="codesContainer"></div>
+  <div id="output"></div>
 
   <script>
-    // --- Replace with your own Web App URL ---
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzCwOW4i_1BK6Yw7f5MOSswXctkMiNCu9d4v1py6JKPbLPZlUZIMxAXCfZz_a1etgLA/exec";
-    const sheetID = "1iDkgTJzvqZ342VuEwL09oBp9vRa5T0ko_QTsuC4kG1c"; // from your sheet link
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyB2p2AZJAsL1cGsP6yozie_1VXhbT0IJea9i-5hlqyrpRHcprZJ4WfUtBYrAUA-ulWIQ/exec";
 
-    // Form submission
-    document.getElementById("codeForm").addEventListener("submit", function(e) {
+    document.getElementById("codeForm").addEventListener("submit", async e => {
       e.preventDefault();
-      const name = document.getElementById("name").value;
-      const description = document.getElementById("description").value;
-      const code = document.getElementById("code").value;
-      const image = document.getElementById("image").value;
+      const data = {
+        name: document.getElementById("name").value,
+        description: document.getElementById("description").value,
+        code: document.getElementById("code").value,
+        image: document.getElementById("image").value
+      };
 
-      fetch(scriptURL, {
+      await fetch(scriptURL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, description, code, image })
-      })
-      .then(response => response.text())
-      .then(() => {
-        document.getElementById("msg").innerText = "✅ Successfully submitted!";
-        document.getElementById("codeForm").reset();
-        loadCodes(); // refresh codes after submit
-        setTimeout(() => document.getElementById("msg").innerText = "", 3000);
-      })
-      .catch(error => {
-        document.getElementById("msg").innerText = "❌ Error submitting form!";
-        console.error(error);
-      });
+        body: JSON.stringify(data)
+      }).then(res => alert("Code submitted successfully!"))
+      .catch(err => alert("Error submitting code!"));
+      
+      loadData();
     });
 
-    // --- Load all codes from Sheet ---
-    function loadCodes() {
-      const url = `https://opensheet.elk.sh/${sheetID}/Sheet1`;
-      fetch(url)
-        .then(res => res.json())
-        .then(rows => {
-          const container = document.getElementById("codesContainer");
-          container.innerHTML = "";
-          rows.reverse().forEach(r => {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <h3>${r.Name}</h3>
-              <p><b>${r.Description}</b></p>
-              <pre>${r.Code}</pre>
-              ${r["Image Link"] ? `<img src="${r["Image Link"]}" width="100%">` : ""}
-              <small>${r["Date & Time"]}</small>
-            `;
-            container.appendChild(card);
-          });
-        })
-        .catch(err => console.error(err));
+    async function loadData() {
+      const res = await fetch(scriptURL);
+      const entries = await res.json();
+      const output = document.getElementById("output");
+      output.innerHTML = "";
+      entries.reverse().forEach(entry => {
+        output.innerHTML += `
+          <div class="card">
+            <h3>${entry.name}</h3>
+            <p><strong>${entry.description}</strong></p>
+            <pre>${entry.code}</pre>
+            ${entry.image ? `<img src="${entry.image}" alt="Dry Run">` : ""}
+          </div>`;
+      });
     }
 
-    loadCodes();
+    loadData();
   </script>
 </body>
 </html>
-
-
 
