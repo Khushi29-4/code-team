@@ -1,103 +1,146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Team Code Collection</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Code Collector</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f5f7fa;
+      font-family: 'Poppins', sans-serif;
+      background: #f4f4f9;
       margin: 0;
-      padding: 20px;
+      padding: 0;
     }
-    h1 { text-align: center; color: #333; }
-    .upload-form, .code-entry {
-      background: #fff;
+    h1 {
+      text-align: center;
+      background: #4a4aff;
+      color: white;
+      padding: 20px;
+      margin: 0;
+    }
+    form {
+      background: white;
+      max-width: 600px;
+      margin: 20px auto;
       padding: 20px;
       border-radius: 12px;
-      max-width: 700px;
-      margin: 20px auto;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     input, textarea {
-      width: 100%; margin: 8px 0; padding: 10px;
-      border: 1px solid #ccc; border-radius: 6px;
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 15px;
     }
     button {
-      background: #007bff; color: white; border: none;
-      padding: 10px 20px; border-radius: 6px; cursor: pointer;
+      width: 100%;
+      padding: 12px;
+      background: #4a4aff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
     }
-    button:hover { background: #0056b3; }
-    pre {
-      background: #f0f0f0; padding: 10px; border-radius: 8px;
+    button:hover { background: #3333cc; }
+    .msg {
+      text-align: center;
+      color: green;
+      font-weight: bold;
+    }
+    .codes {
+      max-width: 800px;
+      margin: 20px auto;
+    }
+    .card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .card h3 { margin: 0; color: #4a4aff; }
+    .card pre {
+      background: #f2f2f2;
+      padding: 10px;
+      border-radius: 8px;
       overflow-x: auto;
     }
-    img { max-width: 100%; border-radius: 8px; margin-top: 10px; }
   </style>
 </head>
 <body>
+  <h1>💻 Team Code Collector</h1>
 
-<h1>👩‍💻 Team Code Collection</h1>
+  <form id="codeForm">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <textarea id="description" placeholder="Short Description" rows="2" required></textarea>
+    <textarea id="code" placeholder="Paste your code here..." rows="6" required></textarea>
+    <input type="text" id="image" placeholder="Image Link (optional)">
+    <button type="submit">Submit</button>
+  </form>
 
-<div class="upload-form">
-  <h3>Add Your Code</h3>
-  <input type="text" id="name" placeholder="Your Name">
-  <textarea id="description" placeholder="Short Description"></textarea>
-  <textarea id="code" placeholder="Paste your code here..." rows="8"></textarea>
-  <input type="text" id="image" placeholder="Paste image link (optional)">
-  <button onclick="addCode()">Submit Code</button>
-</div>
+  <p class="msg" id="msg"></p>
 
-<div id="codeContainer"></div>
+  <div class="codes" id="codesContainer"></div>
 
-<script>
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxdmPg_09OweXNHVNfkYcdIZNiVPUxRRDsg_8ekXH-DguaRgJIrNqJnaff0h1bEvDj8/exec";
+  <script>
+    // --- Replace with your own Web App URL ---
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzCwOW4i_1BK6Yw7f5MOSswXctkMiNCu9d4v1py6JKPbLPZlUZIMxAXCfZz_a1etgLA/exec";
+    const sheetID = "1iDkgTJzvqZ342VuEwL09oBp9vRa5T0ko_QTsuC4kG1c"; // from your sheet link
 
-async function addCode() {
-  const name = document.getElementById("name").value.trim();
-  const desc = document.getElementById("description").value.trim();
-  const code = document.getElementById("code").value.trim();
-  const image = document.getElementById("image").value.trim();
+    // Form submission
+    document.getElementById("codeForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+      const name = document.getElementById("name").value;
+      const description = document.getElementById("description").value;
+      const code = document.getElementById("code").value;
+      const image = document.getElementById("image").value;
 
-  if (!name || !code) {
-    alert("Please enter your name and code!");
-    return;
-  }
+      fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, description, code, image })
+      })
+      .then(response => response.text())
+      .then(() => {
+        document.getElementById("msg").innerText = "✅ Successfully submitted!";
+        document.getElementById("codeForm").reset();
+        loadCodes(); // refresh codes after submit
+        setTimeout(() => document.getElementById("msg").innerText = "", 3000);
+      })
+      .catch(error => {
+        document.getElementById("msg").innerText = "❌ Error submitting form!";
+        console.error(error);
+      });
+    });
 
-  await fetch(WEB_APP_URL, {
-    method: "POST",
-    body: JSON.stringify({ name, description: desc, code, image }),
-    headers: { "Content-Type": "application/json" }
-  });
+    // --- Load all codes from Sheet ---
+    function loadCodes() {
+      const url = `https://opensheet.elk.sh/${sheetID}/Sheet1`;
+      fetch(url)
+        .then(res => res.json())
+        .then(rows => {
+          const container = document.getElementById("codesContainer");
+          container.innerHTML = "";
+          rows.reverse().forEach(r => {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <h3>${r.Name}</h3>
+              <p><b>${r.Description}</b></p>
+              <pre>${r.Code}</pre>
+              ${r["Image Link"] ? `<img src="${r["Image Link"]}" width="100%">` : ""}
+              <small>${r["Date & Time"]}</small>
+            `;
+            container.appendChild(card);
+          });
+        })
+        .catch(err => console.error(err));
+    }
 
-  alert("✅ Code added successfully!");
-  loadCodes();
-}
-
-async function loadCodes() {
-  const res = await fetch(WEB_APP_URL);
-  const data = await res.json();
-
-  const container = document.getElementById("codeContainer");
-  container.innerHTML = "";
-
-  data.reverse().forEach(item => {
-    const div = document.createElement("div");
-    div.className = "code-entry";
-    div.innerHTML = `
-      <h3>${item.name}</h3>
-      <p>${item.description || ""}</p>
-      <pre>${item.code}</pre>
-      ${item.image ? `<img src="${item.image}" alt="Dry Run">` : ""}
-      <small>${new Date(item.timestamp).toLocaleString()}</small>
-    `;
-    container.appendChild(div);
-  });
-}
-
-window.onload = loadCodes;
-</script>
-
+    loadCodes();
+  </script>
 </body>
 </html>
