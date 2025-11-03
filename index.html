@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Team Code Wall</title>
   <style>
     body { font-family: Arial; background: #f7f7f7; margin: 40px; }
@@ -10,7 +10,7 @@
     input, textarea { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
     button { background: #007BFF; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
     button:hover { background: #0056b3; }
-    .card { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 600px; box-shadow: 0 0 8px #ccc; }
+    .code-card { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 600px; box-shadow: 0 0 8px #ccc; }
     pre { background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; }
     img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
   </style>
@@ -19,117 +19,90 @@
   <h2>👩‍💻 Team Code Wall 👨‍💻</h2>
 
   <form id="codeForm">
-    <input type="text" id="name" placeholder="Your Name" required>
-    <input type="text" id="description" placeholder="Short Description" required>
+    <input type="hidden" id="editId" />
+    <input type="text" id="name" placeholder="Your Name" required />
+    <input type="text" id="description" placeholder="Short Description" required />
     <textarea id="code" rows="6" placeholder="Paste your code here..." required></textarea>
-    <input type="url" id="image" placeholder="Paste dry run image link (optional)">
-    
+    <input type="url" id="image" placeholder="Paste dry run image link (optional)" />
+    <button type="submit">Submit Code</button>
   </form>
-  <!-- Buttons -->
-<button id="submitBtn" type="button" onclick="addCode()">Submit</button>
-<button id="updateBtn" type="button" style="display:none;">Update</button>
 
-<!-- Where all codes will appear -->
-<div id="codeList"></div>
-
-
-  <div id="output"></div>
+  <div id="codeList"></div>
 
   <script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbyB2p2AZJAsL1cGsP6yozie_1VXhbT0IJea9i-5hlqyrpRHcprZJ4WfUtBYrAUA-ulWIQ/exec"; // paste your new Apps Script web app URL
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyB2p2AZJAsL1cGsP6yozie_1VXhbT0IJea9i-5hlqyrpRHcprZJ4WfUtBYrAUA-ulWIQ/exec"; // 👈 replace with your Apps Script URL
 
-// Fetch and show all codes
-async function loadCodes() {
-  const res = await fetch(apiUrl);
-  const data = await res.json();
+    async function loadCodes() {
+      const res = await fetch(apiUrl);
+      const data = await res.json();
 
-  const container = document.getElementById("codeList");
-  container.innerHTML = "";
+      const container = document.getElementById("codeList");
+      container.innerHTML = "";
 
-  data.forEach((item) => {
-    const div = document.createElement("div");
-    div.className = "code-card";
-    div.innerHTML = `
-      <h3>${item.name}</h3>
-      <p>${item.description}</p>
-      <pre>${item.code}</pre>
-      <img src="${item.image}" width="150" style="border-radius:10px"/>
-      <br>
-      <button onclick="editCode(${item.id}, '${item.name}', '${item.description}', \`${item.code}\`, '${item.image}')">✏️ Edit</button>
-      <button onclick="deleteCode(${item.id})">🗑️ Delete</button>
-    `;
-    container.appendChild(div);
-  });
-}
+      data.forEach((item) => {
+        const div = document.createElement("div");
+        div.className = "code-card";
+        div.innerHTML = `
+          <h3>${item.name}</h3>
+          <p>${item.description}</p>
+          <pre>${item.code}</pre>
+          ${item.image ? `<img src="${item.image}" />` : ""}
+          <br />
+          <button onclick="editCode(${item.id}, '${item.name}', '${item.description}', \`${item.code}\`, '${item.image || ""}')">✏️ Edit</button>
+          <button onclick="deleteCode(${item.id})">🗑️ Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
 
-// Add new code
-async function addCode() {
-  const name = document.getElementById("name").value;
-  const description = document.getElementById("description").value;
-  const code = document.getElementById("code").value;
-  const image = document.getElementById("image").value;
+    document.getElementById("codeForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editId").value;
+      const name = document.getElementById("name").value;
+      const description = document.getElementById("description").value;
+      const code = document.getElementById("code").value;
+      const image = document.getElementById("image").value;
 
-  const formData = new FormData();
-  formData.append("action", "add");
-  formData.append("name", name);
-  formData.append("description", description);
-  formData.append("code", code);
-  formData.append("image", image);
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("code", code);
+      formData.append("image", image);
 
-  await fetch(apiUrl, { method: "POST", body: formData });
-  alert("Code added!");
-  loadCodes();
-  document.getElementById("codeForm").reset();
-}
+      if (id) {
+        formData.append("action", "edit");
+        formData.append("id", id);
+      } else {
+        formData.append("action", "add");
+      }
 
-// Edit existing code
-async function editCode(id, name, description, code, image) {
-  document.getElementById("name").value = name;
-  document.getElementById("description").value = description;
-  document.getElementById("code").value = code;
-  document.getElementById("image").value = image;
+      await fetch(apiUrl, { method: "POST", body: formData });
+      alert(id ? "Code updated!" : "Code added!");
+      e.target.reset();
+      document.getElementById("editId").value = "";
+      loadCodes();
+    });
 
-  document.getElementById("submitBtn").style.display = "none";
-  document.getElementById("updateBtn").style.display = "inline";
-  document.getElementById("updateBtn").onclick = async function() {
-    const formData = new FormData();
-    formData.append("action", "edit");
-    formData.append("id", id);
-    formData.append("name", document.getElementById("name").value);
-    formData.append("description", document.getElementById("description").value);
-    formData.append("code", document.getElementById("code").value);
-    formData.append("image", document.getElementById("image").value);
+    async function editCode(id, name, description, code, image) {
+      document.getElementById("editId").value = id;
+      document.getElementById("name").value = name;
+      document.getElementById("description").value = description;
+      document.getElementById("code").value = code;
+      document.getElementById("image").value = image;
+    }
 
-    await fetch(apiUrl, { method: "POST", body: formData });
-    alert("Updated!");
-    document.getElementById("codeForm").reset();
-    document.getElementById("submitBtn").style.display = "inline";
-    document.getElementById("updateBtn").style.display = "none";
+    async function deleteCode(id) {
+      if (!confirm("Are you sure you want to delete this code?")) return;
+      const formData = new FormData();
+      formData.append("action", "delete");
+      formData.append("id", id);
+
+      await fetch(apiUrl, { method: "POST", body: formData });
+      alert("Code deleted!");
+      loadCodes();
+    }
+
     loadCodes();
-  };
-}
-
-// Delete code
-async function deleteCode(id) {
-  if (!confirm("Are you sure you want to delete this?")) return;
-
-  const formData = new FormData();
-  formData.append("action", "delete");
-  formData.append("id", id);
-
-  await fetch(apiUrl, { method: "POST", body: formData });
-  alert("Deleted!");
-  loadCodes();
-}
-
-loadCodes();
-</script>
-
+  </script>
 </body>
 </html>
-
-
-
-
-
-
