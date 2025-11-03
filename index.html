@@ -1,106 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Team Code Wall</title>
   <style>
-    body { font-family: Arial; background: #f7f7f7; margin: 40px; }
-    h2 { text-align: center; }
-    form { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px #ccc; max-width: 600px; margin: 20px auto; }
-    input, textarea { width: 100%; margin: 10px 0; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
-    button { background: #007BFF; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-    .code-card { background: white; padding: 15px; border-radius: 10px; margin: 10px auto; max-width: 600px; box-shadow: 0 0 8px #ccc; }
-    pre { background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; }
-    img { max-width: 100%; border-radius: 5px; margin-top: 10px; }
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 30px;
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px #ccc;
+      max-width: 600px;
+      margin: 20px auto;
+    }
+    input, textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+    button {
+      background: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px auto;
+      max-width: 600px;
+      box-shadow: 0 0 8px #ccc;
+    }
+    pre {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    img {
+      max-width: 100%;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
   </style>
 </head>
+
 <body>
   <h2>👩‍💻 Team Code Wall 👨‍💻</h2>
 
- <form id="codeForm">
-  <input type="hidden" id="editId">
-  <input type="text" id="name" placeholder="Your Name" required>
-  <textarea id="description" placeholder="Description"></textarea>
-  <textarea id="code" placeholder="Paste your code here" required></textarea>
-  <input type="text" id="image" placeholder="Image URL (optional)">
-  <button type="submit">Submit</button>
-</form>
+  <!-- Input form -->
+  <form id="codeForm">
+    <input type="hidden" id="id">
+    <input type="text" id="name" placeholder="Your Name" required>
+    <input type="text" id="description" placeholder="Short Description" required>
+    <textarea id="code" rows="6" placeholder="Paste your code here..." required></textarea>
+    <input type="url" id="image" placeholder="Paste dry run image link (optional)">
+    <button type="button" onclick="addCode()">Submit Code</button>
+    <button type="button" id="updateBtn" style="display:none;">Update</button>
+  </form>
 
-<div id="codeList"></div>
+  <!-- Display codes -->
+  <div id="codeList"></div>
 
-<script>
-const apiUrl = "https://script.google.com/macros/s/AKfycbyB2p2AZJAsL1cGsP6yozie_1VXhbT0IJea9i-5hlqyrpRHcprZJ4WfUtBYrAUA-ulWIQ/exec";
+  <script>
+    const apiUrl = "https://script.google.com/macros/s/AKfycbyB2p2AZJAsL1cGsP6yozie_1VXhbT0IJea9i-5hlqyrpRHcprZJ4WfUtBYrAUA-ulWIQ/exec";  // <-- replace with your Google Apps Script Web App URL
 
-async function loadCodes() {
-  const res = await fetch(apiUrl);
-  const data = await res.json();
-  const container = document.getElementById("codeList");
-  container.innerHTML = "";
-  data.forEach(item => {
-    const div = document.createElement("div");
-    div.className = "code-card";
-    div.innerHTML = `
-      <h3>${item.name}</h3>
-      <p>${item.description}</p>
-      <pre>${item.code}</pre>
-      ${item.image ? `<img src="${item.image}" />` : ""}
-      <button onclick="editCode(${item.id}, '${item.name}', '${item.description}', \`${item.code}\`, '${item.image || ""}')">✏️ Edit</button>
-      <button onclick="deleteCode(${item.id})">🗑️ Delete</button>
-    `;
-    container.appendChild(div);
-  });
-}
+    // Load all codes from the sheet
+    async function loadCodes() {
+      const res = await fetch(apiUrl);
+      const data = await res.json();
+      const container = document.getElementById("codeList");
+      container.innerHTML = "";
 
-document.getElementById("codeForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const id = document.getElementById("editId").value;
-  const name = document.getElementById("name").value;
-  const description = document.getElementById("description").value;
-  const code = document.getElementById("code").value;
-  const image = document.getElementById("image").value;
+      data.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "card";
+        div.innerHTML = `
+          <h3>${item.name}</h3>
+          <p>${item.description}</p>
+          <pre>${item.code}</pre>
+          ${item.image ? `<img src="${item.image}" alt="Dry run image">` : ""}
+          <br>
+          <button onclick="editCode(${item.id}, '${item.name}', '${item.description}', \`${item.code.replace(/`/g, '\\`')}\`, '${item.image}')">✏️ Edit</button>
+          <button onclick="deleteCode(${item.id})">🗑️ Delete</button>
+        `;
+        container.appendChild(div);
+      });
+    }
 
-  const formData = new FormData();
-  formData.append("name", name);
-  formData.append("description", description);
-  formData.append("code", code);
-  formData.append("image", image);
-  formData.append("action", id ? "edit" : "add");
-  if (id) formData.append("id", id);
+    // Add a new code
+    async function addCode() {
+      const name = document.getElementById("name").value;
+      const description = document.getElementById("description").value;
+      const code = document.getElementById("code").value;
+      const image = document.getElementById("image").value;
 
-  const res = await fetch(apiUrl, { method: "POST", body: formData });
-  const text = await res.text();
-  alert(text);
-  e.target.reset();
-  document.getElementById("editId").value = "";
-  loadCodes();
-});
+      const formData = new FormData();
+      formData.append("action", "add");
+      formData.append("name", name);
+      formData.append("description", description);
+      formData.append("code", code);
+      formData.append("image", image);
 
-async function editCode(id, name, description, code, image) {
-  document.getElementById("editId").value = id;
-  document.getElementById("name").value = name;
-  document.getElementById("description").value = description;
-  document.getElementById("code").value = code;
-  document.getElementById("image").value = image;
-}
+      await fetch(apiUrl, { method: "POST", body: formData });
+      document.getElementById("codeForm").reset();
+      loadCodes();
+    }
 
-async function deleteCode(id) {
-  if (!confirm("Delete this code?")) return;
-  const formData = new FormData();
-  formData.append("action", "delete");
-  formData.append("id", id);
-  const res = await fetch(apiUrl, { method: "POST", body: formData });
-  const text = await res.text();
-  alert(text);
-  loadCodes();
-}
+    // Edit existing code
+    function editCode(id, name, description, code, image) {
+      document.getElementById("id").value = id;
+      document.getElementById("name").value = name;
+      document.getElementById("description").value = description;
+      document.getElementById("code").value = code;
+      document.getElementById("image").value = image;
 
-loadCodes();
-</script>
+      document.querySelector("button[onclick='addCode()']").style.display = "none";
+      document.getElementById("updateBtn").style.display = "inline";
 
+      document.getElementById("updateBtn").onclick = async function() {
+        const formData = new FormData();
+        formData.append("action", "edit");
+        formData.append("id", id);
+        formData.append("name", document.getElementById("name").value);
+        formData.append("description", document.getElementById("description").value);
+        formData.append("code", document.getElementById("code").value);
+        formData.append("image", document.getElementById("image").value);
+
+        await fetch(apiUrl, { method: "POST", body: formData });
+        document.getElementById("codeForm").reset();
+        document.querySelector("button[onclick='addCode()']").style.display = "inline";
+        document.getElementById("updateBtn").style.display = "none";
+        loadCodes();
+      };
+    }
+
+    // Delete code
+    async function deleteCode(id) {
+      const formData = new FormData();
+      formData.append("action", "delete");
+      formData.append("id", id);
+
+      await fetch(apiUrl, { method: "POST", body: formData });
+      loadCodes();
+    }
+
+    // Load all codes when the page starts
+    loadCodes();
+  </script>
 </body>
 </html>
-
-
-
-
